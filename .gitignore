@@ -4,7 +4,8 @@
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
 # ignore env
-appsettings.json
+**/appsettings*.json
+DevSpot/appsettings.json
 
 # User-specific files
 *.rsuser
