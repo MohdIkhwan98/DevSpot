@@ -1,4 +1,5 @@
-﻿using DevSpot.Models;
+﻿using DevSpot.Constants;
+using DevSpot.Models;
 using DevSpot.Repositories;
 using DevSpot.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -22,8 +23,16 @@ namespace DevSpot.Controllers
         [AllowAnonymous] // overide [Authorize] to allow access from unauthenticate users
         public async Task<IActionResult> Index()
         {
-            var jobPostings = await _repository.GetAllAsync();
-            return View(jobPostings);
+            var allJobPostings = await _repository.GetAllAsync();
+            
+            if (User.IsInRole(Roles.Employer))
+            {
+                var userId = _userManager.GetUserId(User);
+                var filteredJobPostings = allJobPostings.Where(jp => jp.UserId == userId);
+                return View(filteredJobPostings);
+            }
+
+            return View(allJobPostings);
         }
 
         [Authorize(Roles = "Admin, Employer")]
@@ -52,6 +61,52 @@ namespace DevSpot.Controllers
             }
 
             return View(jobPostingVm);
+        }
+
+        //JobPosting/Delete/1
+        [HttpDelete]
+        [Authorize(Roles = "Admin, Employer")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var jobPosting = await _repository.GetByIdAsync(id);
+            
+            if (jobPosting == null)
+            {
+                return NotFound();
+            }
+
+            var userId = _userManager.GetUserId(User);
+
+            if (User.IsInRole(Roles.Admin) == false && jobPosting.UserId != userId)
+            {
+                return Forbid();
+            }
+
+            await _repository.DeleteAsync(id);
+
+            return Ok();
+        }
+
+        [Authorize(Roles = "Admin, Employer")]
+        public async Task<IActionResult> DeleteEasy(int id)
+        {
+            var jobPosting = await _repository.GetByIdAsync(id);
+
+            if (jobPosting == null)
+            {
+                return NotFound();
+            }
+
+            var userId = _userManager.GetUserId(User);
+
+            if (User.IsInRole(Roles.Admin) == false && jobPosting.UserId != userId)
+            {
+                return Forbid();
+            }
+
+            await _repository.DeleteAsync(id);
+
+            return RedirectToAction("Index");
         }
     }
 }

@@ -1,18 +1,50 @@
-﻿@model IEnumerable<JobPosting>
+﻿@using DevSpot.Constants
+@model IEnumerable<JobPosting>
 
 <h1 class="m-3 text-center">Job Postings</h1>
 
 <div  class="list-group">
 	@foreach(var jobPosting in Model)
 	{
-		<div class="list-group-item">
+		<div class="list-group-item" id="job-posting-@jobPosting.Id">
 			<h3>@jobPosting.Title</h3>
 			<p>@jobPosting.Description</p>
 			<p><strong>Company: </strong>@jobPosting.Company</p>
 			<p><strong>Location: </strong>@jobPosting.Location</p>
-			<p><strong>Date Post: </strong>@jobPosting.PostedDate.ToShortDate()</p>
+			<p><strong>Date Post: </strong>@(jobPosting.PostedDate?.ToShortDateString())</p>
+
+			@if (User.IsInRole(Roles.Admin) || User.IsInRole(Roles.Employer)){
+				<div>
+					<button onclick="deleteJobPosting(@jobPosting.Id)" class="btn btn-sm btn-danger">Delete</button>
+				</div>
+				<a class="btn btn-sm btn-danger" asp-action="DeleteEasy" asp-route-id="@jobPosting.Id" asp-controller="JobPostings">Delete</a>
+			}
 		</div>
 	}
-
 </div>
+
+@section Scripts {
+	<script>
+		function deleteJobPosting(id) {
+			if(confirm("Delete this job?")) {
+				// url, which endpoint should this req sent to?
+				// type, Delete
+				// success -> remove the job from view
+				// error -> show error message
+
+				$.ajax({
+					url: "@Url.Action("Delete", "JobPostings")/" +id, // ...../jobpostings/delete/5
+					type: "delete",
+					success: function (result) { // status code in the range of 200
+						$("#job-posting-" +id).remove();
+					},
+					error: function (err) {
+						console.log(err);
+						alert("An error occured")
+					}
+				});
+			}
+		}
+	</script>
+}
 
